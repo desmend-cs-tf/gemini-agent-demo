@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gemini Classroom</title>
+<meta name="description" content="A teaching workbench for learning Gemini API keys, prompts and request settings." />
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ---- Palette: chalkboard slate + chalk paper + chalk-yellow and coral accents ---- */
+:root{
+  --paper:#f6f1e7; --card:#fffaf0; --ink:#1f2a2e; --muted:#5d6a6c; --line:#ddd3bf;
+  --board:#23413b; --board2:#2e554d; --chalk:#f3d36b; --coral:#e2603f; --sage:#5b8f7b;
+  --warn-bg:#fff0d4; --err-bg:#fde4dc;
+  --display:"Bricolage Grotesque",Georgia,serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:var(--paper);color:var(--ink);font:17px/1.55 var(--body)}
+a{color:var(--board2);font-weight:700}
+header{background:var(--board);color:#f4efe2;padding:22px clamp(16px,4vw,48px) 0;position:relative}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font:800 clamp(28px,4vw,40px)/1 var(--display);margin:0;letter-spacing:-.02em}
+h1 span{color:var(--chalk)}
+.tag{opacity:.75;margin:6px 0 0;font-size:15px}
+.status{font:600 14px var(--mono);padding:8px 14px;border-radius:999px;border:1.5px dashed #ffffff55;display:flex;gap:8px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;background:#999}
+.status.ok .dot{background:var(--chalk)} .status.bad .dot{background:var(--coral)}
+nav{display:flex;gap:4px;margin-top:20px}
+nav button{font:700 16px var(--display);background:transparent;color:#f4efe2cc;border:0;padding:12px 20px;border-radius:12px 12px 0 0;cursor:pointer;transition:background .15s}
+nav button:hover{background:var(--board2)}
+nav button[aria-selected=true]{background:var(--paper);color:var(--ink)}
+main{padding:28px clamp(16px,4vw,48px) 60px;max-width:1400px;margin:0 auto}
+.view{display:none;animation:in .3s ease} .view.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:20px}
+h2{font:700 22px var(--display);margin:0 0 4px}
+h3{font:700 17px var(--display);margin:0}
+.hint{color:var(--muted);font-size:15px;margin:2px 0 10px}
+label.lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700;margin-top:14px}
+label.lbl output{font:600 15px var(--mono);background:var(--board);color:var(--chalk);padding:2px 10px;border-radius:8px}
+textarea,input[type=text],input[type=number],select{width:100%;font:16px var(--body);color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px}
+textarea{resize:vertical;min-height:90px}
+textarea:focus,input:focus,select:focus,button:focus-visible{outline:3px solid var(--chalk);outline-offset:1px}
+input[type=range]{width:100%;accent-color:var(--board2);margin-top:8px}
+.params{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+@media(max-width:600px){.params{grid-template-columns:1fr}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.btn{font:700 16px var(--display);border:0;border-radius:12px;padding:12px 22px;cursor:pointer;transition:transform .1s}
+.btn:active{transform:translateY(1px)}
+.primary{background:var(--coral);color:#fff8ef} .primary:disabled{opacity:.55;cursor:wait}
+.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)} .ghost:hover{border-color:var(--board2)}
+.small{font-size:14px;padding:7px 14px}
+.out{white-space:pre-wrap;font:16px/1.6 var(--body);min-height:180px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:16px;overflow:auto;max-height:60vh}
+.out.empty{color:var(--muted);font-style:italic}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#eee5d3,#f8f2e6,#eee5d3);background-size:200%;animation:sh 1.2s infinite;margin:10px 0}
+@keyframes sh{to{background-position:-200% 0}}
+.note{border-radius:12px;padding:12px 14px;margin-top:12px;font-size:15px}
+.warn{background:var(--warn-bg);border-left:5px solid var(--chalk)}
+.err{background:var(--err-bg);border-left:5px solid var(--coral)}
+.info{background:#e6efe9;border-left:5px solid var(--sage)}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stat{font:13px var(--mono);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+.stat b{color:var(--board2)}
+pre.code{background:var(--board);color:#f1ead8;font:14px/1.55 var(--mono);padding:16px;border-radius:12px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+pre.code .k{color:var(--chalk)}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+ol.steps li{counter-increment:s;position:relative;padding:4px 0 18px 58px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;background:var(--board);color:var(--chalk);font:800 19px/40px var(--display);text-align:center}
+code{font:14px var(--mono);background:#efe7d6;padding:1px 6px;border-radius:5px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1>Gemini <span>Classroom</span></h1>
+      <p class="tag">Write a prompt, turn the dials, read the request. Learn how an AI API call really works.</p>
+    </div>
+    <div id="status" class="status" role="status"><span class="dot"></span><span id="statusText">Checking key...</span></div>
+  </div>
+  <nav role="tablist">
+    <button role="tab" data-view="play" aria-selected="true">Playground</button>
+    <button role="tab" data-view="setup" aria-selected="false">Setup guide</button>
+    <button role="tab" data-view="request" aria-selected="false">View request</button>
+  </nav>
+</header>
+
+<main>
+<!-- ================= PLAYGROUND ================= -->
+<section id="play" class="view on">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Prompts</h2>
+        <label class="lbl" for="systemPrompt">System prompt</label>
+        <p class="hint">The rules and role for the model. It shapes how every answer sounds.</p>
+        <textarea id="systemPrompt" rows="3"></textarea>
+        <label class="lbl" for="userPrompt">User prompt</label>
+        <p class="hint">The actual question or task you are asking.</p>
+        <textarea id="userPrompt" rows="4"></textarea>
+        <div class="note info">Each run is a single, separate request. The model has no memory of earlier runs; it only sees what is in these two boxes.</div>
+      </div>
+      <div class="card">
+        <h2>Settings</h2>
+        <div class="params">
+          <div>
+            <label class="lbl" for="model">Model</label>
+            <input id="model" type="text" spellcheck="false" />
+            <p class="hint">Which Gemini model answers. If it is unavailable, type another name from the <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">models list</a>.</p>
+          </div>
+          <div>
+            <label class="lbl" for="mime">Response format</label>
+            <select id="mime"><option>text/plain</option><option>application/json</option></select>
+            <p class="hint">Plain text, or ask the model to reply in JSON data format.</p>
+          </div>
+          <div>
+            <label class="lbl" for="temperature">Temperature <output id="temperatureV"></output></label>
+            <input id="temperature" type="range" min="0" max="2" step="0.05" />
+            <p class="hint">Randomness. Low = predictable, high = more varied and creative. It does not make answers more accurate.</p>
+          </div>
+          <div>
+            <label class="lbl" for="topP">Top P <output id="topPV"></output></label>
+            <input id="topP" type="range" min="0" max="1" step="0.01" />
+            <p class="hint">How many likely next words the model may pick from. Lower = sticks to the safest choices.</p>
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="lbl" for="maxTokens">Max output tokens <output id="maxTokensV"></output></label>
+            <input id="maxTokens" type="range" min="128" max="8192" step="64" />
+            <p class="hint">Length limit for the answer. Tokens are small pieces of text (often part of a word), not whole words. Some models also spend tokens on hidden thinking.</p>
+          </div>
+        </div>
+        <div class="row">
+          <button id="run" class="btn primary">Run prompt</button>
+          <button id="reset" class="btn ghost">Reset to defaults</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="position:sticky;top:16px">
+        <div class="head"><h2>Response</h2><button id="copyResp" class="btn ghost small">Copy response</button></div>
+        <div id="respBox" class="out empty" aria-live="polite">Press "Run prompt" to see the model's answer here.</div>
+        <div id="notes"></div>
+        <div id="stats" class="stats"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SETUP GUIDE ================= -->
+<section id="setup" class="view">
+  <div class="grid">
+    <div class="card">
+      <h2>Get a Gemini API key</h2>
+      <p class="hint">An API key is like a password that lets this app use Gemini on your account. Keep it secret.</p>
+      <ol class="steps">
+        <li><h3>Open Google AI Studio</h3>Go to <a href="https://aistudio.google.com/api-keys" target="_blank" rel="noopener">aistudio.google.com/api-keys</a>, sign in, and accept the terms.</li>
+        <li><h3>Create a key</h3>Click Create API key. Choose an existing Google Cloud project, create a new one, or import one as needed.</li>
+        <li><h3>Store it as a Secret</h3>In Replit, open the Tools pane, choose Setup &gt; Secrets &gt; New Secret. Name it <code>GEMINI_API_KEY</code> and paste the key as the value.</li>
+        <li><h3>Restart the app</h3>Restart so the server reads the new secret. The badge at the top should say "Key configured".</li>
+      </ol>
+      <div class="note info">The key stays on the server only. This page never asks for it, never stores it in your browser, and never shows it. A configured key is not proof the key is valid: running a prompt is the real test.</div>
+      <div class="note warn"><b>Before class:</b> school Google accounts, age limits, or your region may block AI Studio. Free quota limits apply and billing may apply on some projects. Do not send personal student data (names, grades, contact details) in prompts.</div>
+      <p>Official docs: <a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" rel="noopener">Using API keys</a> &middot; <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini models</a></p>
+    </div>
+    <div class="card">
+      <h2>Run it on your own computer</h2>
+      <p>The whole app is exactly two files:</p>
+      <ul>
+        <li><code>server.mjs</code> &mdash; a small Node server (built-in modules only) that keeps the key and calls Gemini. <a href="./source/server.mjs" download>Download</a></li>
+        <li><code>index.html</code> &mdash; this page, with all its styles and script inside. <a href="./source/index.html" download>Download</a></li>
+      </ul>
+      <p>Put both in one folder, install Node 22 or newer, set the key in your environment, then run:</p>
+      <pre class="code"># macOS / Linux
+<span class="k">GEMINI_API_KEY</span>=your-key node server.mjs
+
+# Windows PowerShell
+$env:<span class="k">GEMINI_API_KEY</span>="your-key"; node server.mjs</pre>
+      <p class="hint">Then open the address the server prints. No npm install needed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VIEW REQUEST ================= -->
+<section id="request" class="view">
+  <div class="card">
+    <div class="head"><h2>The exact request sent to Gemini</h2><button id="copyReq" class="btn ghost small">Copy request</button></div>
+    <p class="hint">This updates live as you edit the Playground. The browser sends your settings to our server; the server adds the key and sends this to Google.</p>
+    <h3>Endpoint</h3>
+    <pre class="code" id="endpoint"></pre>
+    <h3>Headers</h3>
+    <pre class="code">Content-Type: application/json
+x-goog-api-key: <span class="k">$GEMINI_API_KEY</span>   (filled in on the server, never shown)</pre>
+    <h3>Body</h3>
+    <pre class="code" id="reqBody"></pre>
+  </div>
+</section>
+</main>
+
+<script>
+// ---- Default values students can always return to ----
+const DEFAULTS = {
+  systemPrompt: "You are a friendly science tutor for middle school students. Explain ideas simply, use one everyday example, and keep answers short.",
+  userPrompt: "Explain photosynthesis.",
+  model: "gemini-2.5-flash", temperature: 1, maxOutputTokens: 1024, topP: 0.95, responseMimeType: "text/plain"
+};
+const $ = id => document.getElementById(id);
+const fields = { systemPrompt:$("systemPrompt"), userPrompt:$("userPrompt"), model:$("model"),
+  temperature:$("temperature"), maxOutputTokens:$("maxTokens"), topP:$("topP"), responseMimeType:$("mime") };
+
+// Read the form into the exact object our server expects
+function readSettings(){
+  return { systemPrompt:fields.systemPrompt.value, userPrompt:fields.userPrompt.value,
+    model:fields.model.value.trim() || DEFAULTS.model,
+    temperature:Number(fields.temperature.value), maxOutputTokens:Number(fields.maxOutputTokens.value),
+    topP:Number(fields.topP.value), responseMimeType:fields.responseMimeType.value };
+}
+
+// Build the Gemini REST body the server will send (generateContent format)
+function geminiBody(s){
+  const body = { contents:[{ role:"user", parts:[{ text:s.userPrompt }] }],
+    generationConfig:{ temperature:s.temperature, maxOutputTokens:s.maxOutputTokens, topP:s.topP, responseMimeType:s.responseMimeType } };
+  if (s.systemPrompt.trim()) body.systemInstruction = { parts:[{ text:s.systemPrompt }] };
+  return body;
+}
+const endpointFor = m => "POST https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(m) + ":generateContent";
+
+// Refresh slider labels and the live request view
+function refresh(){
+  const s = readSettings();
+  $("temperatureV").textContent = s.temperature.toFixed(2);
+  $("topPV").textContent = s.topP.toFixed(2);
+  $("maxTokensV").textContent = s.maxOutputTokens;
+  $("endpoint").textContent = endpointFor(s.model);
+  $("reqBody").textContent = JSON.stringify(geminiBody(s), null, 2);
+}
+function reset(){
+  for (const k in fields) fields[k].value = DEFAULTS[k];
+  refresh();
+}
+Object.values(fields).forEach(f => f.addEventListener("input", refresh));
+$("reset").onclick = reset;
+
+// ---- Tabs ----
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.view));
+});
+
+// ---- Key status: only tells us a key exists, not that it works ----
+fetch("./status").then(r => r.json()).then(d => {
+  $("status").className = "status " + (d.configured ? "ok" : "bad");
+  $("statusText").textContent = d.configured ? "Key configured" : "Setup needed";
+}).catch(() => { $("status").className = "status bad"; $("statusText").textContent = "Status unavailable"; });
+
+// Helper to add a warning/error note (textContent keeps it safe)
+function note(kind, text){ const d = document.createElement("div"); d.className = "note " + kind; d.textContent = text; $("notes").append(d); }
+
+// ---- Run the prompt ----
+let lastText = "";
+$("run").onclick = async () => {
+  const s = readSettings(), box = $("respBox"), btn = $("run");
+  if (!s.userPrompt.trim()) { $("notes").replaceChildren(); note("warn", "Type a user prompt first."); return; }
+  btn.disabled = true; btn.textContent = "Thinking...";
+  $("notes").replaceChildren(); $("stats").replaceChildren(); lastText = "";
+  box.className = "out"; box.replaceChildren(...[90,100,75,95,60].map(w => { const k = document.createElement("div"); k.className = "skel"; k.style.width = w + "%"; return k; }));
+  try {
+    const res = await fetch("./generate", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(s) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Request failed with status " + res.status);
+    lastText = data.text || "";
+    box.textContent = lastText || "The model returned an empty response.";
+    box.className = lastText ? "out" : "out empty";
+    if (data.finishReason === "MAX_TOKENS") note("warn", "The answer was cut off because it hit Max output tokens. Raise the limit and run again.");
+    else if (!lastText && data.finishReason) note("warn", "Empty response. Finish reason: " + data.finishReason);
+    const u = data.usage || {};
+    [["prompt tokens",u.promptTokens],["output tokens",u.outputTokens],["total tokens",u.totalTokens],["finish",data.finishReason],["time",data.elapsedMs != null ? data.elapsedMs + " ms" : null]]
+      .filter(([,v]) => v != null).forEach(([k,v]) => { const sp = document.createElement("span"); sp.className = "stat"; sp.append(k + ": "); const b = document.createElement("b"); b.textContent = v; sp.append(b); $("stats").append(sp); });
+  } catch (e) {
+    box.className = "out empty"; box.textContent = "No response.";
+    note("err", e.message + " (Check the Setup guide, or try another model name.)");
+  } finally { btn.disabled = false; btn.textContent = "Run prompt"; }
+};
+
+// ---- Copy buttons with short feedback ----
+function copy(btn, text){
+  const label = btn.textContent;
+  navigator.clipboard.writeText(text).then(() => btn.textContent = "Copied", () => btn.textContent = "Copy failed")
+    .finally(() => setTimeout(() => btn.textContent = label, 1400));
+}
+$("copyResp").onclick = e => lastText ? copy(e.target, lastText) : (e.target.textContent = "Nothing yet", setTimeout(() => e.target.textContent = "Copy response", 1400));
+$("copyReq").onclick = e => { const s = readSettings(); copy(e.target, endpointFor(s.model) + "\n\n" + JSON.stringify(geminiBody(s), null, 2)); };
+
+reset();
+</script>
+</body>
+</html>

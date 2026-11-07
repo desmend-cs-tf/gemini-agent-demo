@@ -1,0 +1,23 @@
+kind = "web"
+previewPath = "/"
+title = "Gemini Classroom"
+description = "A two-file classroom demo explaining Google Gemini API keys, system prompts, user prompts, and generation settings."
+version = "1.0.0"
+id = "artifacts/gemini-classroom"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23930
+
+[services.development]
+run = "pnpm --filter @workspace/gemini-classroom run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gemini-classroom", "run", "build" ]
+run = "pnpm --filter @workspace/gemini-classroom run serve"
+
+[services.env]
+PORT = "23930"
+BASE_PATH = "/"
